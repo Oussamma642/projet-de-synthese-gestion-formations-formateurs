@@ -15,7 +15,8 @@ export default function Drs() {
     const [selectedDr, setSelectedDr] = useState(null);
     const [filteredDrs, setFilteredDrs] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    
+    const [regions, setRegions] = useState([]);
+
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -25,14 +26,23 @@ export default function Drs() {
 
     useEffect(() => {
         loadDrs();
+        // Charger les régions
+        axiosClient
+            .get("/regions")
+            .then(({ data }) => {
+                setRegions(data);
+            })
+            .catch((error) => {
+                console.error("Erreur lors du chargement des régions:", error);
+            });
     }, []);
 
     useEffect(() => {
-    const filtered = drs.filter((dr) =>
-        dr.user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredDrs(filtered);
-}, [searchTerm, drs]);
+        const filtered = drs.filter((dr) =>
+            dr.user.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredDrs(filtered);
+    }, [searchTerm, drs]);
 
     const loadDrs = () => {
         axiosClient
@@ -116,37 +126,36 @@ export default function Drs() {
                 <h1 className="text-2xl font-bold text-gray-800">
                     Directeurs Regionaux
                 </h1>
-                <div className="flex justify-between items-center mb-6">
-            </div>
+                <div className="flex justify-between items-center mb-6"></div>
 
-            {/* -------- Champ de recherche */}
-            <div className="">
-                <div className="relative">
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Rechercher par nom..."
-                        className="w-full px-4 py-2 pl-10 pr-4 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg
-                            className="h-5 w-5 text-gray-400"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
+                {/* -------- Champ de recherche */}
+                <div className="">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Rechercher par nom..."
+                            className="w-full px-4 py-2 pl-10 pr-4 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg
+                                className="h-5 w-5 text-gray-400"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* ------- Button pour creer un nouvel utiliateur */}
+                {/* ------- Button pour creer un nouvel utiliateur */}
                 <button
                     onClick={() => navigate("/dashboard/create-user/dr")}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -309,12 +318,12 @@ export default function Drs() {
                                     <option value="">
                                         Sélectionner une région
                                     </option>
-                                    {drs.map((dr) => (
+                                    {regions.map((region) => (
                                         <option
-                                            key={dr.region.id}
-                                            value={dr.region.id}
+                                            key={region.id}
+                                            value={region.id}
                                         >
-                                            {dr.region.nom}
+                                            {region.nom}
                                         </option>
                                     ))}
                                 </select>

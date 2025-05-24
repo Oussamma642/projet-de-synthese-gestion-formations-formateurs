@@ -72,11 +72,24 @@ class AnimateurController extends Controller
      */
     public function destroy(string $id)
     {
+
         $animateur = Animateur::findOrFail($id);
+
+        if (! $animateur) {
+            return response()->json(['message' => 'Animateur not found'], 404);
+        }
+
+        $user = $animateur->user;
+
+        // Supprimer d'abord le CDC
         $animateur->delete();
-        return response()->json(['message' => 'Animateur deleted successfully']);
+
+        // Supprimer ensuite l'utilisateur associé
+        if ($user) {
+            $user->delete();
+        }
+
+        return response()->json(['message' => 'CDC et son utilisateur ont été supprimés avec succès'], 200);
+
     }
 }
-
-
-
