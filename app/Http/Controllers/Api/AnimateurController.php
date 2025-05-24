@@ -87,7 +87,7 @@ class AnimateurController extends Controller
         // Supprimer ensuite l'utilisateur associé
         if ($user) {
             $user->delete();
-        }
+        }   
 
         return response()->json(['message' => 'CDC et son utilisateur ont été supprimés avec succès'], 200);
 
