@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\FormationController;
 use App\Http\Controllers\Api\ParticipantController;
 use App\Http\Controllers\Api\RegionController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\BrancheController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -128,7 +130,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/cdcs', CdcController::class);
     Route::get('/cdcs/auth-user/{userId}', [CdcController::class, 'getCdcOfAuthUser']);
     Route::put('/cdcs/{id}/filieres', [CdcController::class, 'updateFilieres']);
+
+
+    // Branche routes
+    Route::apiResource('/branches', BrancheController::class);
+
+
 });
+
+
+
 
 // Authentication route
 Route::post('/login', [AuthController::class, 'login']);

@@ -12,6 +12,7 @@ class Cdc extends Model
 
     protected $fillable = [
         'user_id',
+        'branche_id'
     ];
 
     /**
@@ -32,8 +33,9 @@ class Cdc extends Model
     /**
      * Obtenir les filières associées à ce chef de centre.
      */
-    public function filieres()
+  
+    public function branche()
     {
-        return $this->hasMany(Filiere::class, 'cdc_id');
+        return $this->belongsTo(Branche::class);
     }
 }

@@ -28,6 +28,7 @@ export default function Cdcs() {
     setLoading(true);
     try {
       const { data } = await axiosClient.get("/cdcs");
+      console.log('Cdcs: ', data);
       setCdcs(data);
       setFilteredCdcs(data);
       setLoading(false);
@@ -89,6 +90,7 @@ export default function Cdcs() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Téléphone</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branche</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
@@ -99,6 +101,7 @@ export default function Cdcs() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{cdc.user?.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cdc.user?.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cdc.user?.phone}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cdc.branche?.nom}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <button
                     onClick={() => navigate(`/dashboard/edit-cdc/${cdc.id}`)}

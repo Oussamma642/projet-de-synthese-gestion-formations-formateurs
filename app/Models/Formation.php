@@ -19,6 +19,7 @@ class Formation extends Model
         'formation_status',
         'validated_by_cdc',
         'validated_by_drif',
+        'branche_id'
     ];
 
     /**
@@ -69,4 +70,10 @@ class Formation extends Model
     {
         return $this->hasMany(Participant::class);
     }
+
+    public function branche()
+    {
+        return $this->belongsTo(Branche::class);
+    }
+    
 }

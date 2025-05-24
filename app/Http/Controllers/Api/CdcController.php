@@ -1,19 +1,35 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
-use App\Models\Cdc;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Cdc;
 use App\Models\Filiere;
-
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Http\Request;
 
 class CdcController extends Controller
 {
     // Récupérer tous les CDCs
     public function index()
     {
-        $cdcs = Cdc::with('user')->get();
+
+        // $cdcs = Cdc::with('user')->get();
+
+        // Récupérer l'ID du rôle DR
+        $cdcRole = Role::where('name', 'cdc')->first();
+
+        if (! $cdcRole) {
+            return response()->json(['message' => 'Rôle DR non trouvé'], 404);
+        }
+
+        $cdcs = Cdc::with(['user', 'branche'])
+            ->whereHas('user', function ($query) use ($cdcRole) {
+                $query->where('role_id', $cdcRole->id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return response()->json($cdcs, 200);
     }
 
@@ -21,7 +37,8 @@ class CdcController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id'    => 'required|exists:users,id',
+            'branche_id' => 'required|exists:branches,id',
         ]);
 
         $cdc = Cdc::create($request->all());
@@ -34,13 +51,12 @@ class CdcController extends Controller
     {
         $cdc = Cdc::with('user')->find($id);
 
-        if (!$cdc) {
+        if (! $cdc) {
             return response()->json(['message' => 'CDC not found'], 404);
         }
 
         return response()->json($cdc, 200);
     }
-
 
     public function getFilieresOfCdc($cdcId)
     {
@@ -48,14 +64,13 @@ class CdcController extends Controller
         return response()->json($filieres);
     }
 
-    // Afficher un CDC qui belongs to the auth user 
+    // Afficher un CDC qui belongs to the auth user
     public function getCdcOfAuthUser($userId)
     {
         // $cdc = Cdc::with('user')->find($id);
         $cdc = Cdc::where('user_id', $userId)->get();
-        
 
-        if (!$cdc) {
+        if (! $cdc) {
             return response()->json(['message' => 'CDC not found'], 404);
         }
 
@@ -67,12 +82,13 @@ class CdcController extends Controller
     {
         $cdc = Cdc::find($id);
 
-        if (!$cdc) {
+        if (! $cdc) {
             return response()->json(['message' => 'CDC not found'], 404);
         }
 
         $request->validate([
-            'user_id' => 'required|exists:users,id',
+            'user_id'    => 'required|exists:users,id',
+            'branche_id' => 'required|exists:branches,id',
         ]);
 
         $cdc->update($request->all());
@@ -83,14 +99,25 @@ class CdcController extends Controller
     // Supprimer un CDC
     public function destroy($id)
     {
+
         $cdc = Cdc::find($id);
 
-        if (!$cdc) {
+        if (! $cdc) {
             return response()->json(['message' => 'CDC not found'], 404);
         }
 
+        $user = $cdc->user;
+
+        // Supprimer d'abord le CDC
         $cdc->delete();
 
-        return response()->json(['message' => 'CDC deleted successfully'], 200);
+        // Supprimer ensuite l'utilisateur associé
+        if ($user) {
+            $user->delete();
+        }
+
+        return response()->json(['message' => 'CDC et son utilisateur ont été supprimés avec succès'], 200);
+
+
     }
 }

@@ -3,20 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../../axios-client";
 import { useStateContext } from "../../contexts/ContextProvider";
 
-// Liste statique des filières
-const STATIC_FILIERES = [
-    // Filières IT
-    { id: 1, name: "Développement Web", category: "IT" },
-    { id: 2, name: "Intelligence Artificielle", category: "IT" },
-    { id: 3, name: "Sécurité Informatique", category: "IT" },
-    // Filières Économie
-    { id: 4, name: "Comptabilité", category: "Économie" },
-    { id: 5, name: "Finance", category: "Économie" },
-    { id: 6, name: "Marketing Digital", category: "Économie" },
-    // Filière Génie Civil
-    { id: 7, name: "Construction BTP", category: "Génie Civil" },
-];
-
 function CreateCdc() {
     const navigate = useNavigate();
     const { id } = useParams(); // Récupérer l'ID s'il est présent dans l'URL
@@ -27,6 +13,8 @@ function CreateCdc() {
     const [errors, setErrors] = useState(null);
     const [cdcData, setCdcData] = useState(null);
     const [selectedFilieres, setSelectedFilieres] = useState([]);
+    const [branches, setBranches] = useState([]);
+    const [selectedBranch, setSelectedBranch] = useState("");
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -35,6 +23,14 @@ function CreateCdc() {
         password_confirmation: "",
         role_id: "",
     });
+
+    // useEffects to get branches
+    useEffect(() => {
+        axiosClient.get("/branches").then(({ data }) => {
+            setBranches(data);
+            console.log("branches: ", data);
+        });
+    }, []);
 
     // Charger les données du CDC en mode édition
     useEffect(() => {
@@ -67,6 +63,10 @@ function CreateCdc() {
                             password_confirmation: "",
                             role_id: data.user.role_id,
                         });
+                        // Initialiser la branche sélectionnée
+                        if (data.branche_id) {
+                            setSelectedBranch(data.branche_id);
+                        }
                     }
                     setLoadingData(false);
                 })
@@ -80,7 +80,12 @@ function CreateCdc() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrors(null);
-        // setLoading(true);
+
+        // Validation de la branche
+        if (!selectedBranch) {
+            setErrors({ branche_id: ["Veuillez sélectionner une branche"] });
+            return;
+        }
 
         try {
             let cdcId;
@@ -100,7 +105,15 @@ function CreateCdc() {
                         formData.password_confirmation;
                 }
 
+                // 1. Mettre à jour l'utilisateur
                 await axiosClient.put(`/users/${cdcData.user.id}`, userData);
+
+                // 2. Mettre à jour le CDC avec la nouvelle branche
+                await axiosClient.put(`/cdcs/${id}`, {
+                    user_id: cdcData.user.id,
+                    branche_id: selectedBranch,
+                });
+
                 cdcId = id; // Utiliser l'ID existant du CDC
             } else {
                 // Mode création
@@ -117,25 +130,12 @@ function CreateCdc() {
                 // 2. Créer le CDC
                 const cdcResponse = await axiosClient.post("/cdcs", {
                     user_id: userResponse.data.id,
+                    branche_id: selectedBranch,
                 });
 
                 cdcId = cdcResponse.data.id; // Récupérer l'ID du CDC créé
+                setSelectedFilieres([]);
             }
-
-            const flrs = [];
-
-            // 3. Créer les filières pour ce CDC
-            for (const filiereId of selectedFilieres) {
-                const filiereData = STATIC_FILIERES.find(
-                    (f) => f.id === filiereId
-                );
-                flrs.push(filiereData.name);
-            }
-
-            await axiosClient.post("/filieres", {
-                names: flrs,
-                cdc_id: cdcId,
-            });
 
             setNotification(
                 `CDC ${isEditMode ? "modifié" : "créé"} avec succès`
@@ -165,26 +165,6 @@ function CreateCdc() {
             setLoading(false);
         }
     };
-
-    const handleFiliereChange = (filiereId) => {
-        // console.log(selectedFilieres);
-        setSelectedFilieres((prev) => {
-            if (prev.includes(filiereId)) {
-                return prev.filter((id) => id !== filiereId);
-            } else {
-                return [...prev, filiereId];
-            }
-        });
-    };
-
-    // Grouper les filières par catégorie
-    const groupedFilieres = STATIC_FILIERES.reduce((acc, filiere) => {
-        if (!acc[filiere.category]) {
-            acc[filiere.category] = [];
-        }
-        acc[filiere.category].push(filiere);
-        return acc;
-    }, {});
 
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -302,48 +282,30 @@ function CreateCdc() {
                         </div>
                     </div>
 
-                    {/* Section des filières */}
-                    <div className="mt-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">
-                            Filières
-                        </h3>
-                        {Object.entries(groupedFilieres).map(
-                            ([category, filieres]) => (
-                                <div key={category} className="mb-6">
-                                    <h4 className="text-md font-semibold text-gray-700 mb-2">
-                                        {category}
-                                    </h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {filieres.map((filiere) => (
-                                            <div
-                                                key={filiere.id}
-                                                className="flex items-center"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    id={`filiere-${filiere.id}`}
-                                                    checked={selectedFilieres.includes(
-                                                        filiere.id
-                                                    )}
-                                                    onChange={() =>
-                                                        handleFiliereChange(
-                                                            filiere.id
-                                                        )
-                                                    }
-                                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                                />
-                                                <label
-                                                    htmlFor={`filiere-${filiere.id}`}
-                                                    className="ml-2 block text-sm text-gray-900"
-                                                >
-                                                    {filiere.name}
-                                                </label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )
-                        )}
+                    {/* Section des branches */}
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700">
+                                Branche
+                            </label>
+                            <select
+                                value={selectedBranch}
+                                onChange={(e) =>
+                                    setSelectedBranch(e.target.value)
+                                }
+                                className="mt-1 block w-full px-3 py-2 border rounded-md"
+                            >
+                                <option value="">
+                                    Sélectionner une branche{" "}
+                                </option>
+
+                                {branches.map((branch) => (
+                                    <option key={branch.id} value={branch.id}>
+                                        {branch.nom}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     <div className="flex justify-end pt-6 border-t">

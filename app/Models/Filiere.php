@@ -12,7 +12,7 @@ class Filiere extends Model
 
     protected $fillable = [
         'name',
-        'cdc_id',
+        'branche_id'
     ];
 
     /**
@@ -25,16 +25,16 @@ class Filiere extends Model
     /**
      * Obtenir le chef de centre associé à cette filière.
      */
-    public function cdc()
-    {
-        return $this->belongsTo(Cdc::class);
-    }
-
     /**
      * Obtenir les participants associés à cette filière.
      */
     public function participants()
     {
         return $this->hasMany(Participant::class);
+    }
+    
+    public function branche()
+    {
+        return $this->belongsTo(Branche::class);
     }
 }
