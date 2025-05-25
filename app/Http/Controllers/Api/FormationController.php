@@ -242,6 +242,7 @@ class FormationController extends Controller
 
             $formation = Formation::create([
                 'title'             => $request->title,
+                'branche_id'        => $request->branche_id,
                 'description'       => $request->description,
                 'start_date'        => $request->start_date,
                 'end_date'          => $request->end_date,

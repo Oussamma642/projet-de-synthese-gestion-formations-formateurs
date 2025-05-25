@@ -1,10 +1,9 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Branche;
+use Illuminate\Http\Request;
 
 class BrancheController extends Controller
 {
@@ -48,4 +47,21 @@ class BrancheController extends Controller
     {
         //
     }
+
+    /**
+     * Get Filieres Of the branche
+     */
+
+    public function getFilieresOfBranche($id)
+    {
+        // 1. Retrieve the branche or fail with a 404
+        $branche = Branche::findOrFail($id);
+
+        // 2. Fetch its filières via the hasMany relationship
+        $filieres = $branche->filieres; // or ->filieres()->get()
+
+        // 3. Return them as JSON
+        return response()->json($filieres);
+    }
+
 }

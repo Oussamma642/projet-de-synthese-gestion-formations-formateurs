@@ -13,11 +13,15 @@ export default function FormationForm() {
     // Track current step (1 or 2)
     const [currentStep, setCurrentStep] = useState(1);
 
+    // Branch of the auth Cdc
+    const [branche, setBranche] = useState("");
+
     // Track the formation ID after creation (used in step 2)
     const [formationId, setFormationId] = useState(null);
 
     const [formData, setFormData] = useState({
         title: "",
+        branche_id: "",
         description: "",
         start_date: "",
         end_date: "",
@@ -81,32 +85,57 @@ export default function FormationForm() {
                     `/cdcs/auth-user/${user.id}`
                 );
                 setCdcInfos(response.data);
-                console.log(
-                    `cdc info while drif who is auth: ${response.data}`
-                );
             } catch (error) {
                 console.error(
                     "Erreur lors de la récupération des filières:",
                     error
                 );
-                setError("Impossible de charger les filières du CDC");
+                setError(
+                    "Impossible de charger les infos de cdc en fonction de auth user"
+                );
             }
         };
 
         fetchCdcOfTheAuthUser();
     }, [user.id]);
 
-    // useEffect to fetch filieres of the authenticated cdc
+    // useEffect to fetch branche of the auth-cdc
     useEffect(() => {
-        if (cdcInfos === null) return;
+        const getBrancheOfAuthCdc = async () => {
+            if (!cdcInfos || !cdcInfos[0]?.id) return;
+
+            try {
+                const response = await axiosClient.get(
+                    `/branches/cdc/${cdcInfos[0].id}`
+                );
+                setBranche(response.data);
+                // console.log('------------------- Branche: ', response.data);
+                // Mettre à jour formData avec la branche_id
+                setFormData((prev) => ({
+                    ...prev,
+                    branche_id: response.data.id,
+                }));
+            } catch (error) {
+                console.error(
+                    "Erreur lors de la récupération de la branche:",
+                    error
+                );
+                setError("Impossible de charger la branche du CDC");
+            }
+        };
+        getBrancheOfAuthCdc();
+    }, [cdcInfos]);
+
+    // useEffect to fetch filieres of the authenticated cdc based on his branche
+    useEffect(() => {
+        if (!branche?.id) return;
 
         const fetchFilieresOfCdc = async () => {
             try {
                 const response = await axiosClient.get(
-                    `/filieres/cdc/${cdcInfos[0].id}`
+                    `/branches/${branche.id}/filieres`
                 );
                 setFiliereOfCdc(response.data);
-                console.log(`filieres of this cdc: `, response.data);
             } catch (error) {
                 console.error(
                     "Erreur lors de la récupération des filières:",
@@ -116,12 +145,12 @@ export default function FormationForm() {
             }
         };
 
-        if (cdcInfos[0]?.id) {
-            fetchFilieresOfCdc();
-        }
-    }, [cdcInfos]);
+        fetchFilieresOfCdc();
+    }, [branche]);
 
     // useEffect to fetch participants and filter their filieres are in the filieres of the authenticated CDC
+    
+
     useEffect(() => {
         const filterParticipantsBasedOnIDsFilieres = (participants) => {
             // Si c'est un DRIF, retourner tous les participants
@@ -157,6 +186,8 @@ export default function FormationForm() {
                 console.log("Participants avant filtrage:", response.data);
                 setAllParticipants(response.data);
 
+                console.log('---------------------- Participants: ', response.data);
+
                 // Si c'est un DRIF ou si nous n'avons pas d'infos CDC
                 if (isDrif || cdcInfos === null) {
                     setFilteredParticipants(response.data);
@@ -183,6 +214,8 @@ export default function FormationForm() {
             fetchParticipants();
         }
     }, [filieresOfCdc, isDrif]);
+
+    
 
     // Fetch initial data on component mount
     useEffect(() => {
@@ -470,6 +503,25 @@ export default function FormationForm() {
                             required
                         />
                     </div>
+
+                    {!isDrif && branche && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Branche
+                            </label>
+                            <select
+                                name="branche_id"
+                                value={formData.branche_id}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border rounded-md"
+                                disabled
+                            >
+                                <option value={branche.id}>
+                                    {branche.nom}
+                                </option>
+                            </select>
+                        </div>
+                    )}
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">

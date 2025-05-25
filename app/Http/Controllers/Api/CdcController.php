@@ -115,9 +115,17 @@ class CdcController extends Controller
         if ($user) {
             $user->delete();
         }
-
         return response()->json(['message' => 'CDC et son utilisateur ont été supprimés avec succès'], 200);
-
-
     }
+
+     /**
+     * Get Branche Of the cdc auth user
+     */
+    public function getBrancheOfAuthCdc($cdcId)
+    {
+        $cdc = Cdc::findOrFail($cdcId);
+        $branche = $cdc->branche;
+        return response()->json($branche);
+    }
+    
 }
