@@ -17,6 +17,29 @@ class FormationController extends Controller
      * Get validated formations based on acteur
      */
 
+    private function customiseGettingValidatedFormationsOfCdc()
+    {
+        // Récupérer le CDC de l'utilisateur authentifié
+        $cdc = \App\Models\Cdc::where('user_id', auth()->id())->first();
+
+        if (! $cdc) {
+            return collect([]);
+        }
+
+        // Récupérer la branche du CDC
+        $branche = $cdc->branche;
+
+        if (! $branche) {
+            return collect([]);
+        }
+
+        return Formation::where('formation_status', 'validee')
+        ->where('validated_by_cdc', true)
+        ->where('branche_id', $branche->id)
+        ->get();
+
+    }
+
     public function getValidatedFormationsOfActeur($acteur)
     {
         $formations = null;
@@ -28,9 +51,7 @@ class FormationController extends Controller
                 break;
 
             case 'cdc':
-                $formations = Formation::where('formation_status', 'validee')
-                    ->where('validated_by_cdc', true)
-                    ->get();
+                $formations = $this->customiseGettingValidatedFormationsOfCdc();
                 break;
 
             default:
@@ -69,8 +90,23 @@ class FormationController extends Controller
 
     protected function customiseGettingFormationsOfCdc()
     {
+        // Récupérer le CDC de l'utilisateur authentifié
+        $cdc = \App\Models\Cdc::where('user_id', auth()->id())->first();
+
+        if (! $cdc) {
+            return collect([]);
+        }
+
+        // Récupérer la branche du CDC
+        $branche = $cdc->branche;
+
+        if (! $branche) {
+            return collect([]);
+        }
+
         return Formation::where('formation_status', 'redigee')
             ->where('redigee_par_cdc', true)
+            ->where('branche_id', $branche->id)
             ->get();
     }
 
@@ -97,7 +133,7 @@ class FormationController extends Controller
     {
         if ($role === 'drif') {
             $formation->validated_by_drif = true;
-            $formation->validated_by_cdc  = true;
+            $formation->validated_by_cdc  = false;
 
         } else {
             $formation->validated_by_drif = false;
@@ -255,47 +291,6 @@ class FormationController extends Controller
             ]);
 
             $this->handleBrouillonFormation($formation, $request->userRole, 1);
-
-            // Check if the current user is a DRIF - if so, automatically validate
-            /*
-            $userRole = $request->userRole;
-            $isDrif   = $userRole === 'drif';
-
-            // If DRIF, set status to validee and mark as validated by both DRIF and CDC
-
-            if ($isDrif) {
-                Log::info('DRIF creating formation - setting to validee automatically', [
-                    'user_id' => auth()->id(),
-                ]);
-
-                $formation = Formation::create([
-                    'title'             => $request->title,
-                    'description'       => $request->description,
-                    'start_date'        => $request->start_date,
-                    'end_date'          => $request->end_date,
-                    'animateur_id'      => $request->animateur_id,
-                    'city_id'           => $request->city_id,
-                    'site_id'           => $request->site_id,
-                    'formation_status'  => 'brouillon', // Override to validee
-                    'validated_by_cdc'  => false,       // Automatically validated by CDC
-                    'validated_by_drif' => true,        // Automatically validated by DRIF
-                ]);
-            } else {
-                // Normal case for other users
-                $formation = Formation::create([
-                    'title'             => $request->title,
-                    'description'       => $request->description,
-                    'start_date'        => $request->start_date,
-                    'end_date'          => $request->end_date,
-                    'animateur_id'      => $request->animateur_id,
-                    'city_id'           => $request->city_id,
-                    'site_id'           => $request->site_id,
-                    'formation_status'  => $request->formation_status,
-                    'validated_by_cdc'  => true,
-                    'validated_by_drif' => false,
-                ]);
-            }
-        */
 
             return response()->json($formation, 201);
         } catch (\Exception $e) {
@@ -956,9 +951,9 @@ class FormationController extends Controller
     {
         // Validate request
         $validated = $request->validate([
-            'participant_ids'   => 'required|array',
+            'participant_ids'  => 'required|array',
             // 'participant_ids.*' => 'exists:users,id',
-            'formation_status'  => 'required|in:brouillon,redigee,validee',
+            'formation_status' => 'required|in:brouillon,redigee,validee',
         ]);
 
         // Find the formation
