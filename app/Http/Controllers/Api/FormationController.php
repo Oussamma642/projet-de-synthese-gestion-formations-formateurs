@@ -209,12 +209,12 @@ class FormationController extends Controller
                 ]);
 
                 // Utiliser le modèle Eloquent pour la réponse finale
-                $formations = Formation::with(['animateur.user', 'city', 'site'])
+                $formations = Formation::with(['animateur.user', 'city', 'site', 'branche'])
                     ->where('formation_status', $request->status)
                     ->get();
             } else {
                 // Récupérer toutes les formations
-                $formations = Formation::with(['animateur.user', 'city', 'site'])->get();
+                $formations = Formation::with(['animateur.user', 'city', 'site', 'branche'])->get();
 
                 Log::info('All formations retrieved', [
                     'count' => $formations->count(),
@@ -314,7 +314,7 @@ class FormationController extends Controller
         Log::info('API formations show called', ['id' => $id]);
 
         try {
-            $formation = Formation::with(['animateur.user', 'city', 'site', 'participants.user'])->findOrFail($id);
+            $formation = Formation::with(['animateur.user', 'city', 'site', 'participants.user', 'branche'])->findOrFail($id);
 
             // Ajouter une propriété de statut supplémentaire pour le frontend
             $formation->status = $formation->formation_status;
